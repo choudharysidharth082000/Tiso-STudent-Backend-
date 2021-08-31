@@ -1,4 +1,7 @@
-const studentDB = require('../../../models/Auth');
+const {Student} = require('../../../models/Auth');
+const studentValidator = require('../../../Validators/studentValidator');
+const verifyPass = require('../../../utils/verifyPassword');
+const generateJWT = require('../../../utils/generateJWT')
 module.exports = 
 {
 
@@ -6,34 +9,72 @@ module.exports =
     {
         return "Hello There"
     },
-    viewStudent: async (parent , args , context , info)=>
+    login: async (parent , args , context , info)=>
     {
+
+        const {email , password} = args;
         
+
+        const data ={email, password};
+        
+
+        const resultFromJoi = studentValidator('email password', data);
+
+
+        if(!resultFromJoi)
+        {
+            throw new Error('User Has Entered Invalid Credentials');
+        }
+
 
         try 
         {
-            const students = await studentDB.findOne({email: "choudharysidhardtth082000@gmail.com"});
-            console.log(students);
+            const user = await Student.findOne({email: email});
 
-            if(!students)
-            {
-                throw new Error ("Student with this username does not exists");
+            if(!user){
+                throw new Error('Entered Wrong Credentials');
             }
+
+
+            
+
+
+
+            const verifier = await verifyPass(password, user.password);
+            
+
+           
+
+            if(!verifier)
+            {
+                throw new Error('Entered Wrong Username or Password');
+            }
+
+
+            const userAccess = generateJWT(user);
+
+
 
             return {
-                firstName: students.firstName,
-                lastName: students.lastName,
-                mobileNumber : students.mobileNumber,
-                title: students.title,
-                email: students.email,
-                password: students.password
+                status: true,
+                message : "Login Successful",
+                student: user,
+                accessToken : userAccess
             }
+            
 
+            
+            
         }
         catch(err)
         {
-            console.log(`${err}`)
+            throw new Error(`${err}`);
         }
+
+        
+
+        
+
     }
     
 }

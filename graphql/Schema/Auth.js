@@ -38,18 +38,26 @@ type Response
     status : Boolean 
     message: String 
     student: student
+    accessToken: String
+}
+type logoutResponse
+{
+    status: Boolean
+    message: String
 }
 
 
   
   type Query {
     books: String
-    viewStudent : student
+    login(email: String! ,password: String!): Response
 
   }
   type Mutation
   {
       signupstudent(studentData : studentInput) : Response
+
+      logout(acessToken : String) : Response
       
   }
   `

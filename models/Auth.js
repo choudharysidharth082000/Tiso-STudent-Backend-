@@ -52,9 +52,51 @@ const Students = new Schema(
 
         }
 
-    }
+    },{timestamps: true}
 )
 
 const Student = mongoose.model("Student", Students);
 
-module.exports= Student;
+exports.Student = Student;
+
+const userSessionSchema = new Schema({
+    token : {
+        type : String,
+        minLength : 256,
+    
+        required : true
+    },
+    userID : {
+        type: Schema.Types.ObjectId,
+        ref: 'userModel' 
+    },
+    lastAccessedAt : {
+        type : Date,
+        default : new Date()
+    },
+    isActive : {
+        type : Boolean,
+        default : true
+    },
+    tokenCreationDetails : {
+        ip : {
+            type : String,
+            default : ''
+        },
+        useragent : {
+            type : String,
+            default : ''
+        },
+        os : {
+            type : String,
+            default : ''
+        }
+    },
+    sessionLogs : [
+        {
+            type : String
+        }
+    ]
+}, {timestamps : true});
+const UserSessionModel = mongoose.model("user-sessions", userSessionSchema);
+exports.UserSessionModel = UserSessionModel;

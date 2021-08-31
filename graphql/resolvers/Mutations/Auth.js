@@ -1,7 +1,7 @@
-const studentDB = require('../../../models/Auth');
+const {Student,UserSessionModel} = require('../../../models/Auth');
 const studentValidator = require('../../../Validators/studentValidator');
 const hashPassword = require('../../../utils/passwordHash');
-
+const generateJWT = require('../../../utils/generateJWT');
 module.exports = 
 {
 
@@ -16,6 +16,9 @@ module.exports =
             {
                 throw new Error('You have entered Wrong Credentials');
             }
+
+            
+            
             
 
             const {generateSalt, generateHash} =await hashPassword(studentData.password);
@@ -30,10 +33,12 @@ module.exports =
             studentData.password = generateHash;
 
             studentData.salt = generateSalt;
+
+            const newJWT = generateJWT(studentData);
             
 
             try{
-                const studentEmail = await studentDB.findOne({email : studentData.email});
+                const studentEmail = await Student.findOne({email : studentData.email});
                 
 
                 if(studentEmail)
@@ -50,7 +55,7 @@ module.exports =
 
             try 
             {
-                const student = await  new studentDB(studentData);
+                const student = await  new Student(studentData);
 
                 if(!student)
                 {
@@ -64,7 +69,8 @@ module.exports =
                     return {
                         status: true,
                         message: "Used Signed up Successfully",
-                        student: student
+                        student: student,
+                        accessToken: newJWT
                     }
                 }
 
@@ -76,6 +82,73 @@ module.exports =
             }
     
             
+        }, 
+        logout: async (parent , args , context , info) =>
+        {
+            if(!context.isLoggedIN) {
+				throw new Error('User Not Logged In');
+			}
+			let {_id} = context.user;
+            console.log(_id);
+            const {acessToken} =args;
+            
+
+
+            
+            try{
+                const user = await UserSessionModel.findOne({userID: _id });
+
+                if(!user)
+
+                {
+                            try 
+                    {
+                        const newuser = await new UserSessionModel({userID: _id,token:acessToken, lastAccessedAt: new Date(), isActive: false,sessionLogs: `User Logged Out at ${new Date()}`});
+                        try{
+
+                            const saving = await newuser.save();
+
+                        }
+                        catch(err)
+                        {
+                            console.log(err);
+                        }
+
+                    
+                    }
+                    catch(err)
+                    {
+                        console.log(err);
+                    }
+
+
+                 }
+
+
+                 await UserSessionModel.findOneAndUpdate({userID : _id},{$set:{isActive : false, lastAccessedAt : new Date() },
+				$push: {sessionLogs: `User Logged Out at ${new Date()}` } });
+
+
+                return {
+                    status: true,
+                    message: "Logout Successful"
+                }
+
+
+
+            }
+            catch(err)
+            {
+                console.log(err);
+            }
+
+
+
+			
+
+           			
+		
+           
         }
     
     
